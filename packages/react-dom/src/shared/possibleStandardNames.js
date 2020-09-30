@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
-// When adding attributes to the HTML or SVG whitelist, be sure to
+// When adding attributes to the HTML or SVG allowed attribute list, be sure to
 // also add them to this module to ensure casing and incorrect name
 // warnings.
 const possibleStandardNames = {
@@ -54,9 +54,12 @@ const possibleStandardNames = {
   defer: 'defer',
   dir: 'dir',
   disabled: 'disabled',
+  disablepictureinpicture: 'disablePictureInPicture',
+  disableremoteplayback: 'disableRemotePlayback',
   download: 'download',
   draggable: 'draggable',
   enctype: 'encType',
+  enterkeyhint: 'enterKeyHint',
   for: 'htmlFor',
   form: 'form',
   formmethod: 'formMethod',

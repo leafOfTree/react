@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -41,6 +41,35 @@ describe('ReactChildReconciler', () => {
     };
   }
 
+  function makeIterableFunction(value) {
+    const fn = () => {};
+    fn['@@iterator'] = function iterator() {
+      let timesCalled = 0;
+      return {
+        next() {
+          const done = timesCalled++ > 0;
+          return {done, value: done ? undefined : value};
+        },
+      };
+    };
+    return fn;
+  }
+
+  it('does not treat functions as iterables', () => {
+    let node;
+    const iterableFunction = makeIterableFunction('foo');
+
+    expect(() => {
+      node = ReactTestUtils.renderIntoDocument(
+        <div>
+          <h1>{iterableFunction}</h1>
+        </div>,
+      );
+    }).toErrorDev('Functions are not valid as a React child');
+
+    expect(node.innerHTML).toContain(''); // h1
+  });
+
   it('warns for duplicated array keys', () => {
     class Component extends React.Component {
       render() {
@@ -48,7 +77,7 @@ describe('ReactChildReconciler', () => {
       }
     }
 
-    expect(() => ReactTestUtils.renderIntoDocument(<Component />)).toWarnDev(
+    expect(() => ReactTestUtils.renderIntoDocument(<Component />)).toErrorDev(
       'Keys should be unique so that components maintain their identity ' +
         'across updates. Non-unique keys may cause children to be ' +
         'duplicated and/or omitted — the behavior is unsupported and ' +
@@ -75,13 +104,13 @@ describe('ReactChildReconciler', () => {
       }
     }
 
-    expect(() => ReactTestUtils.renderIntoDocument(<GrandParent />)).toWarnDev(
+    expect(() => ReactTestUtils.renderIntoDocument(<GrandParent />)).toErrorDev(
       'Encountered two children with the same key, `1`. ' +
         'Keys should be unique so that components maintain their identity ' +
         'across updates. Non-unique keys may cause children to be ' +
         'duplicated and/or omitted — the behavior is unsupported and ' +
-        'could change in a future version.',
-      '    in div (at **)\n' +
+        'could change in a future version.\n' +
+        '    in div (at **)\n' +
         '    in Component (at **)\n' +
         '    in Parent (at **)\n' +
         '    in GrandParent (at **)',
@@ -95,7 +124,7 @@ describe('ReactChildReconciler', () => {
       }
     }
 
-    expect(() => ReactTestUtils.renderIntoDocument(<Component />)).toWarnDev(
+    expect(() => ReactTestUtils.renderIntoDocument(<Component />)).toErrorDev(
       'Keys should be unique so that components maintain their identity ' +
         'across updates. Non-unique keys may cause children to be ' +
         'duplicated and/or omitted — the behavior is unsupported and ' +
@@ -122,13 +151,13 @@ describe('ReactChildReconciler', () => {
       }
     }
 
-    expect(() => ReactTestUtils.renderIntoDocument(<GrandParent />)).toWarnDev(
+    expect(() => ReactTestUtils.renderIntoDocument(<GrandParent />)).toErrorDev(
       'Encountered two children with the same key, `1`. ' +
         'Keys should be unique so that components maintain their identity ' +
         'across updates. Non-unique keys may cause children to be ' +
         'duplicated and/or omitted — the behavior is unsupported and ' +
-        'could change in a future version.',
-      '    in div (at **)\n' +
+        'could change in a future version.\n' +
+        '    in div (at **)\n' +
         '    in Component (at **)\n' +
         '    in Parent (at **)\n' +
         '    in GrandParent (at **)',

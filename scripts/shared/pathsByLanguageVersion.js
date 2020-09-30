@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,7 +12,9 @@ const esNextPaths = [
   'packages/*/*.js',
   // Source files
   'packages/*/src/**/*.js',
-  'packages/events/**/*.js',
+  'packages/dom-event-testing-library/**/*.js',
+  'packages/react-interactions/**/*.js',
+  'packages/react-interactions/**/*.js',
   'packages/shared/**/*.js',
   // Shims and Flow environment
   'scripts/flow/*.js',

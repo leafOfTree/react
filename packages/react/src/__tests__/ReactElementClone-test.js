@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -259,9 +259,7 @@ describe('ReactElementClone', () => {
   it('warns for keys for arrays of elements in rest args', () => {
     expect(() =>
       React.cloneElement(<div />, null, [<div />, <div />]),
-    ).toWarnDev(
-      'Each child in an array or iterator should have a unique "key" prop.',
-    );
+    ).toErrorDev('Each child in a list should have a unique "key" prop.');
   });
 
   it('does not warns for arrays of elements with keys', () => {
@@ -299,12 +297,12 @@ describe('ReactElementClone', () => {
     }
     expect(() =>
       ReactTestUtils.renderIntoDocument(React.createElement(GrandParent)),
-    ).toWarnDev(
+    ).toErrorDev(
       'Warning: Failed prop type: ' +
         'Invalid prop `color` of type `number` supplied to `Component`, ' +
         'expected `string`.\n' +
-        '    in Component (created by GrandParent)\n' +
-        '    in Parent (created by GrandParent)\n' +
+        '    in Component (at **)\n' +
+        '    in Parent (at **)\n' +
         '    in GrandParent',
     );
   });
@@ -317,7 +315,7 @@ describe('ReactElementClone', () => {
   });
 
   it('should ignore undefined key and ref', () => {
-    const element = React.createFactory(ComponentClass)({
+    const element = React.createElement(ComponentClass, {
       key: '12',
       ref: '34',
       foo: '56',
@@ -339,7 +337,7 @@ describe('ReactElementClone', () => {
   });
 
   it('should extract null key and ref', () => {
-    const element = React.createFactory(ComponentClass)({
+    const element = React.createElement(ComponentClass, {
       key: '12',
       ref: '34',
       foo: '56',
@@ -358,5 +356,19 @@ describe('ReactElementClone', () => {
       expect(Object.isFrozen(element.props)).toBe(true);
     }
     expect(clone.props).toEqual({foo: 'ef'});
+  });
+
+  it('throws an error if passed null', () => {
+    const element = null;
+    expect(() => React.cloneElement(element)).toThrow(
+      'React.cloneElement(...): The argument must be a React element, but you passed null.',
+    );
+  });
+
+  it('throws an error if passed undefined', () => {
+    let element;
+    expect(() => React.cloneElement(element)).toThrow(
+      'React.cloneElement(...): The argument must be a React element, but you passed undefined.',
+    );
   });
 });

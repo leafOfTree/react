@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -35,10 +35,13 @@ describe('rendering React components at document', () => {
 
   describe('with old implicit hydration API', () => {
     function expectDeprecationWarningWithFiber(callback) {
-      expect(callback).toLowPriorityWarnDev(
+      expect(
+        callback,
+      ).toWarnDev(
         'render(): Calling ReactDOM.render() to hydrate server-rendered markup ' +
-          'will stop working in React v17. Replace the ReactDOM.render() call ' +
+          'will stop working in React v18. Replace the ReactDOM.render() call ' +
           'with ReactDOM.hydrate() if you want React to attach to the server HTML.',
+        {withoutStack: true},
       );
     }
 
@@ -196,12 +199,13 @@ describe('rendering React components at document', () => {
       expect(() => {
         expect(() =>
           ReactDOM.render(<Component text="Hello world" />, testDocument),
-        ).toLowPriorityWarnDev(
+        ).toWarnDev(
           'render(): Calling ReactDOM.render() to hydrate server-rendered markup ' +
-            'will stop working in React v17. Replace the ReactDOM.render() call ' +
+            'will stop working in React v18. Replace the ReactDOM.render() call ' +
             'with ReactDOM.hydrate() if you want React to attach to the server HTML.',
+          {withoutStack: true},
         );
-      }).toWarnDev('Warning: Text content did not match.');
+      }).toErrorDev('Warning: Text content did not match.');
     });
 
     it('should throw on full document render w/ no markup', () => {
@@ -367,7 +371,7 @@ describe('rendering React components at document', () => {
     it('renders over an existing text child without throwing', () => {
       const container = document.createElement('div');
       container.textContent = 'potato';
-      expect(() => ReactDOM.hydrate(<div>parsnip</div>, container)).toWarnDev(
+      expect(() => ReactDOM.hydrate(<div>parsnip</div>, container)).toErrorDev(
         'Expected server HTML to contain a matching <div> in <div>.',
       );
       expect(container.textContent).toBe('parsnip');
@@ -394,7 +398,7 @@ describe('rendering React components at document', () => {
 
       expect(() =>
         ReactDOM.hydrate(<Component text="Hello world" />, testDocument),
-      ).toWarnDev('Warning: Text content did not match.');
+      ).toErrorDev('Warning: Text content did not match.');
       expect(testDocument.body.innerHTML).toBe('Hello world');
     });
 
@@ -417,7 +421,7 @@ describe('rendering React components at document', () => {
       // getTestDocument() has an extra <meta> that we didn't render.
       expect(() =>
         ReactDOM.hydrate(<Component text="Hello world" />, testDocument),
-      ).toWarnDev('Did not expect server HTML to contain a <meta> in <head>.');
+      ).toErrorDev('Did not expect server HTML to contain a <meta> in <head>.');
       expect(testDocument.body.innerHTML).toBe('Hello world');
     });
 

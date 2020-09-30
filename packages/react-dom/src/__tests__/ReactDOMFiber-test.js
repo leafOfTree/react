@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,7 +11,6 @@
 
 const React = require('react');
 const ReactDOM = require('react-dom');
-const ReactTestUtils = require('react-dom/test-utils');
 const PropTypes = require('prop-types');
 
 describe('ReactDOMFiber', () => {
@@ -19,6 +18,12 @@ describe('ReactDOMFiber', () => {
 
   beforeEach(() => {
     container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+    container = null;
   });
 
   it('should render strings as children', () => {
@@ -171,6 +176,31 @@ describe('ReactDOMFiber', () => {
     expect(firstNode.tagName).toBe('DIV');
   });
 
+  it('renders an empty fragment', () => {
+    const Div = () => <div />;
+    const EmptyFragment = () => <></>;
+    const NonEmptyFragment = () => (
+      <>
+        <Div />
+      </>
+    );
+
+    ReactDOM.render(<EmptyFragment />, container);
+    expect(container.firstChild).toBe(null);
+
+    ReactDOM.render(<NonEmptyFragment />, container);
+    expect(container.firstChild.tagName).toBe('DIV');
+
+    ReactDOM.render(<EmptyFragment />, container);
+    expect(container.firstChild).toBe(null);
+
+    ReactDOM.render(<Div />, container);
+    expect(container.firstChild.tagName).toBe('DIV');
+
+    ReactDOM.render(<EmptyFragment />, container);
+    expect(container.firstChild).toBe(null);
+  });
+
   let svgEls, htmlEls, mathEls;
   const expectSVG = {ref: el => svgEls.push(el)};
   const expectHTML = {ref: el => htmlEls.push(el)};
@@ -181,12 +211,12 @@ describe('ReactDOMFiber', () => {
   };
 
   const assertNamespacesMatch = function(tree) {
-    container = document.createElement('div');
+    const testContainer = document.createElement('div');
     svgEls = [];
     htmlEls = [];
     mathEls = [];
 
-    ReactDOM.render(tree, container);
+    ReactDOM.render(tree, testContainer);
     svgEls.forEach(el => {
       expect(el.namespaceURI).toBe('http://www.w3.org/2000/svg');
     });
@@ -197,8 +227,8 @@ describe('ReactDOMFiber', () => {
       expect(el.namespaceURI).toBe('http://www.w3.org/1998/Math/MathML');
     });
 
-    ReactDOM.unmountComponentAtNode(container);
-    expect(container.innerHTML).toBe('');
+    ReactDOM.unmountComponentAtNode(testContainer);
+    expect(testContainer.innerHTML).toBe('');
   };
 
   it('should render one portal', () => {
@@ -216,30 +246,33 @@ describe('ReactDOMFiber', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  // TODO: remove in React 17
-  it('should support unstable_createPortal alias', () => {
-    const portalContainer = document.createElement('div');
+  // TODO: remove in React 18
+  if (!__EXPERIMENTAL__) {
+    it('should support unstable_createPortal alias', () => {
+      const portalContainer = document.createElement('div');
 
-    expect(() =>
-      ReactDOM.render(
-        <div>
-          {ReactDOM.unstable_createPortal(<div>portal</div>, portalContainer)}
-        </div>,
-        container,
-      ),
-    ).toLowPriorityWarnDev(
-      'The ReactDOM.unstable_createPortal() alias has been deprecated, ' +
-        'and will be removed in React 17+. Update your code to use ' +
-        'ReactDOM.createPortal() instead. It has the exact same API, ' +
-        'but without the "unstable_" prefix.',
-    );
-    expect(portalContainer.innerHTML).toBe('<div>portal</div>');
-    expect(container.innerHTML).toBe('<div></div>');
+      expect(() =>
+        ReactDOM.render(
+          <div>
+            {ReactDOM.unstable_createPortal(<div>portal</div>, portalContainer)}
+          </div>,
+          container,
+        ),
+      ).toWarnDev(
+        'The ReactDOM.unstable_createPortal() alias has been deprecated, ' +
+          'and will be removed in React 18+. Update your code to use ' +
+          'ReactDOM.createPortal() instead. It has the exact same API, ' +
+          'but without the "unstable_" prefix.',
+        {withoutStack: true},
+      );
+      expect(portalContainer.innerHTML).toBe('<div>portal</div>');
+      expect(container.innerHTML).toBe('<div></div>');
 
-    ReactDOM.unmountComponentAtNode(container);
-    expect(portalContainer.innerHTML).toBe('');
-    expect(container.innerHTML).toBe('');
-  });
+      ReactDOM.unmountComponentAtNode(container);
+      expect(portalContainer.innerHTML).toBe('');
+      expect(container.innerHTML).toBe('');
+    });
+  }
 
   it('should render many portals', () => {
     const portalContainer1 = document.createElement('div');
@@ -428,6 +461,40 @@ describe('ReactDOMFiber', () => {
     );
     expect(portalContainer.innerHTML).toBe('');
     expect(container.innerHTML).toBe('<div></div>');
+  });
+
+  it('should unmount empty portal component wherever it appears', () => {
+    const portalContainer = document.createElement('div');
+
+    class Wrapper extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          show: true,
+        };
+      }
+      render() {
+        return (
+          <div>
+            {this.state.show && (
+              <>
+                {ReactDOM.createPortal(null, portalContainer)}
+                <div>child</div>
+              </>
+            )}
+            <div>parent</div>
+          </div>
+        );
+      }
+    }
+
+    const instance = ReactDOM.render(<Wrapper />, container);
+    expect(container.innerHTML).toBe(
+      '<div><div>child</div><div>parent</div></div>',
+    );
+    instance.setState({show: false});
+    expect(instance.state.show).toBe(false);
+    expect(container.innerHTML).toBe('<div><div>parent</div></div>');
   });
 
   it('should keep track of namespace across portals (simple)', () => {
@@ -818,38 +885,38 @@ describe('ReactDOMFiber', () => {
 
   it('should bubble events from the portal to the parent', () => {
     const portalContainer = document.createElement('div');
+    document.body.appendChild(portalContainer);
+    try {
+      const ops = [];
+      let portal = null;
 
-    const ops = [];
-    let portal = null;
+      ReactDOM.render(
+        <div onClick={() => ops.push('parent clicked')}>
+          {ReactDOM.createPortal(
+            <div
+              onClick={() => ops.push('portal clicked')}
+              ref={n => (portal = n)}>
+              portal
+            </div>,
+            portalContainer,
+          )}
+        </div>,
+        container,
+      );
 
-    ReactDOM.render(
-      <div onClick={() => ops.push('parent clicked')}>
-        {ReactDOM.createPortal(
-          <div
-            onClick={() => ops.push('portal clicked')}
-            ref={n => (portal = n)}>
-            portal
-          </div>,
-          portalContainer,
-        )}
-      </div>,
-      container,
-    );
+      expect(portal.tagName).toBe('DIV');
 
-    expect(portal.tagName).toBe('DIV');
+      portal.click();
 
-    const fakeNativeEvent = {};
-    ReactTestUtils.simulateNativeEventOnNode(
-      'topClick',
-      portal,
-      fakeNativeEvent,
-    );
-
-    expect(ops).toEqual(['portal clicked', 'parent clicked']);
+      expect(ops).toEqual(['portal clicked', 'parent clicked']);
+    } finally {
+      document.body.removeChild(portalContainer);
+    }
   });
 
   it('should not onMouseLeave when staying in the portal', () => {
     const portalContainer = document.createElement('div');
+    document.body.appendChild(portalContainer);
 
     let ops = [];
     let firstTarget = null;
@@ -858,58 +925,138 @@ describe('ReactDOMFiber', () => {
 
     function simulateMouseMove(from, to) {
       if (from) {
-        ReactTestUtils.simulateNativeEventOnNode('topMouseOut', from, {
-          target: from,
-          relatedTarget: to,
-        });
+        from.dispatchEvent(
+          new MouseEvent('mouseout', {
+            bubbles: true,
+            cancelable: true,
+            relatedTarget: to,
+          }),
+        );
       }
       if (to) {
-        ReactTestUtils.simulateNativeEventOnNode('topMouseOver', to, {
-          target: to,
-          relatedTarget: from,
-        });
+        to.dispatchEvent(
+          new MouseEvent('mouseover', {
+            bubbles: true,
+            cancelable: true,
+            relatedTarget: from,
+          }),
+        );
+      }
+    }
+
+    try {
+      ReactDOM.render(
+        <div>
+          <div
+            onMouseEnter={() => ops.push('enter parent')}
+            onMouseLeave={() => ops.push('leave parent')}>
+            <div ref={n => (firstTarget = n)} />
+            {ReactDOM.createPortal(
+              <div
+                onMouseEnter={() => ops.push('enter portal')}
+                onMouseLeave={() => ops.push('leave portal')}
+                ref={n => (secondTarget = n)}>
+                portal
+              </div>,
+              portalContainer,
+            )}
+          </div>
+          <div ref={n => (thirdTarget = n)} />
+        </div>,
+        container,
+      );
+
+      simulateMouseMove(null, firstTarget);
+      expect(ops).toEqual(['enter parent']);
+
+      ops = [];
+
+      simulateMouseMove(firstTarget, secondTarget);
+      expect(ops).toEqual([
+        // Parent did not invoke leave because we're still inside the portal.
+        'enter portal',
+      ]);
+
+      ops = [];
+
+      simulateMouseMove(secondTarget, thirdTarget);
+      expect(ops).toEqual([
+        'leave portal',
+        'leave parent', // Only when we leave the portal does onMouseLeave fire.
+      ]);
+    } finally {
+      document.body.removeChild(portalContainer);
+    }
+  });
+
+  // Regression test for https://github.com/facebook/react/issues/19562
+  it('does not fire mouseEnter twice when relatedTarget is the root node', () => {
+    let ops = [];
+    let target = null;
+
+    function simulateMouseMove(from, to) {
+      if (from) {
+        from.dispatchEvent(
+          new MouseEvent('mouseout', {
+            bubbles: true,
+            cancelable: true,
+            relatedTarget: to,
+          }),
+        );
+      }
+      if (to) {
+        to.dispatchEvent(
+          new MouseEvent('mouseover', {
+            bubbles: true,
+            cancelable: true,
+            relatedTarget: from,
+          }),
+        );
       }
     }
 
     ReactDOM.render(
-      <div>
-        <div
-          onMouseEnter={() => ops.push('enter parent')}
-          onMouseLeave={() => ops.push('leave parent')}>
-          <div ref={n => (firstTarget = n)} />
-          {ReactDOM.createPortal(
-            <div
-              onMouseEnter={() => ops.push('enter portal')}
-              onMouseLeave={() => ops.push('leave portal')}
-              ref={n => (secondTarget = n)}>
-              portal
-            </div>,
-            portalContainer,
-          )}
-        </div>
-        <div ref={n => (thirdTarget = n)} />
-      </div>,
+      <div
+        ref={n => (target = n)}
+        onMouseEnter={() => ops.push('enter')}
+        onMouseLeave={() => ops.push('leave')}
+      />,
       container,
     );
 
-    simulateMouseMove(null, firstTarget);
-    expect(ops).toEqual(['enter parent']);
+    simulateMouseMove(null, container);
+    expect(ops).toEqual([]);
 
     ops = [];
-
-    simulateMouseMove(firstTarget, secondTarget);
-    expect(ops).toEqual([
-      // Parent did not invoke leave because we're still inside the portal.
-      'enter portal',
-    ]);
+    simulateMouseMove(container, target);
+    expect(ops).toEqual(['enter']);
 
     ops = [];
+    simulateMouseMove(target, container);
+    expect(ops).toEqual(['leave']);
 
-    simulateMouseMove(secondTarget, thirdTarget);
-    expect(ops).toEqual([
-      'leave portal',
-      'leave parent', // Only when we leave the portal does onMouseLeave fire.
-    ]);
+    ops = [];
+    simulateMouseMove(container, null);
+    expect(ops).toEqual([]);
+  });
+
+  // @gate enableEagerRootListeners
+  it('listens to events that do not exist in the Portal subtree', () => {
+    const onClick = jest.fn();
+
+    const ref = React.createRef();
+    ReactDOM.render(
+      <div onClick={onClick}>
+        {ReactDOM.createPortal(<button ref={ref}>click</button>, document.body)}
+      </div>,
+      container,
+    );
+    const event = new MouseEvent('click', {
+      bubbles: true,
+    });
+    ref.current.dispatchEvent(event);
+
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 
   it('should throw on bad createPortal argument', () => {
@@ -927,7 +1074,7 @@ describe('ReactDOMFiber', () => {
         return <div onClick="woops" />;
       }
     }
-    expect(() => ReactDOM.render(<Example />, container)).toWarnDev(
+    expect(() => ReactDOM.render(<Example />, container)).toErrorDev(
       'Expected `onClick` listener to be a function, instead got a value of `string` type.\n' +
         '    in div (at **)\n' +
         '    in Example (at **)',
@@ -940,18 +1087,32 @@ describe('ReactDOMFiber', () => {
         return <div onClick={false} />;
       }
     }
-    expect(() => ReactDOM.render(<Example />, container)).toWarnDev(
+    expect(() => ReactDOM.render(<Example />, container)).toErrorDev(
       'Expected `onClick` listener to be a function, instead got `false`.\n\n' +
         'If you used to conditionally omit it with onClick={condition && value}, ' +
-        'pass onClick={condition ? value : undefined} instead.\n',
-      '    in div (at **)\n' + '    in Example (at **)',
+        'pass onClick={condition ? value : undefined} instead.\n' +
+        '    in div (at **)\n' +
+        '    in Example (at **)',
     );
   });
 
   it('should not update event handlers until commit', () => {
+    spyOnDev(console, 'error');
+
     let ops = [];
     const handlerA = () => ops.push('A');
     const handlerB = () => ops.push('B');
+
+    function click() {
+      const event = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+      });
+      Object.defineProperty(event, 'timeStamp', {
+        value: 0,
+      });
+      node.dispatchEvent(event);
+    }
 
     class Example extends React.Component {
       state = {flip: false, count: 0};
@@ -970,7 +1131,7 @@ describe('ReactDOMFiber', () => {
     class Click extends React.Component {
       constructor() {
         super();
-        click(node);
+        node.click();
       }
       render() {
         return null;
@@ -982,16 +1143,7 @@ describe('ReactDOMFiber', () => {
     const node = container.firstChild;
     expect(node.tagName).toEqual('DIV');
 
-    function click(target) {
-      const fakeNativeEvent = {};
-      ReactTestUtils.simulateNativeEventOnNode(
-        'topClick',
-        target,
-        fakeNativeEvent,
-      );
-    }
-
-    click(node);
+    click();
 
     expect(ops).toEqual(['A']);
     ops = [];
@@ -999,7 +1151,7 @@ describe('ReactDOMFiber', () => {
     // Render with the other event handler.
     inst.flip();
 
-    click(node);
+    click();
 
     expect(ops).toEqual(['B']);
     ops = [];
@@ -1007,7 +1159,7 @@ describe('ReactDOMFiber', () => {
     // Rerender without changing any props.
     inst.tick();
 
-    click(node);
+    click();
 
     expect(ops).toEqual(['B']);
     ops = [];
@@ -1027,8 +1179,18 @@ describe('ReactDOMFiber', () => {
     ops = [];
 
     // Any click that happens after commit, should invoke A.
-    click(node);
+    click();
     expect(ops).toEqual(['A']);
+
+    if (__DEV__) {
+      // TODO: this warning shouldn't be firing in the first place if user didn't call it.
+      const errorCalls = console.error.calls.count();
+      for (let i = 0; i < errorCalls; i++) {
+        expect(console.error.calls.argsFor(i)[0]).toMatch(
+          'unstable_flushDiscreteUpdates: Cannot flush updates when React is already rendering.',
+        );
+      }
+    }
   });
 
   it('should not crash encountering low-priority tree', () => {
@@ -1062,12 +1224,13 @@ describe('ReactDOMFiber', () => {
     expect(() => {
       expect(() =>
         ReactDOM.render(<div key="2">baz</div>, container),
-      ).toWarnDev(
+      ).toErrorDev(
         'render(...): ' +
           'It looks like the React-rendered content of this container was ' +
           'removed without using React. This is not supported and will ' +
           'cause errors. Instead, call ReactDOM.unmountComponentAtNode ' +
           'to empty a container.',
+        {withoutStack: true},
       );
     }).toThrowError();
   });
@@ -1079,12 +1242,15 @@ describe('ReactDOMFiber', () => {
     expect(container.innerHTML).toBe('<div>bar</div>');
     // then we mess with the DOM before an update
     container.innerHTML = '<div>MEOW.</div>';
-    expect(() => ReactDOM.render(<div>baz</div>, container)).toWarnDev(
+    expect(() =>
+      ReactDOM.render(<div>baz</div>, container),
+    ).toErrorDev(
       'render(...): ' +
         'It looks like the React-rendered content of this container was ' +
         'removed without using React. This is not supported and will ' +
         'cause errors. Instead, call ReactDOM.unmountComponentAtNode ' +
         'to empty a container.',
+      {withoutStack: true},
     );
   });
 
@@ -1095,12 +1261,15 @@ describe('ReactDOMFiber', () => {
     expect(container.innerHTML).toBe('<div>bar</div>');
     // then we mess with the DOM before an update
     container.innerHTML = '';
-    expect(() => ReactDOM.render(<div>baz</div>, container)).toWarnDev(
+    expect(() =>
+      ReactDOM.render(<div>baz</div>, container),
+    ).toErrorDev(
       'render(...): ' +
         'It looks like the React-rendered content of this container was ' +
         'removed without using React. This is not supported and will ' +
         'cause errors. Instead, call ReactDOM.unmountComponentAtNode ' +
         'to empty a container.',
+      {withoutStack: true},
     );
   });
 
@@ -1140,5 +1309,96 @@ describe('ReactDOMFiber', () => {
     expect(container.innerHTML).toBe('');
     container.appendChild(fragment);
     expect(container.innerHTML).toBe('<div>foo</div>');
+  });
+
+  // Regression test for https://github.com/facebook/react/issues/12643#issuecomment-413727104
+  it('should not diff memoized host components', () => {
+    const inputRef = React.createRef();
+    let didCallOnChange = false;
+
+    class Child extends React.Component {
+      state = {};
+      componentDidMount() {
+        document.addEventListener('click', this.update, true);
+      }
+      componentWillUnmount() {
+        document.removeEventListener('click', this.update, true);
+      }
+      update = () => {
+        // We're testing that this setState()
+        // doesn't cause React to commit updates
+        // to the input outside (which would itself
+        // prevent the parent's onChange parent handler
+        // from firing).
+        this.setState({});
+        // Note that onChange was always broken when there was an
+        // earlier setState() in a manual document capture phase
+        // listener *in the same component*. But that's very rare.
+        // Here we're testing that a *child* component doesn't break
+        // the parent if this happens.
+      };
+      render() {
+        return <div />;
+      }
+    }
+
+    class Parent extends React.Component {
+      handleChange = val => {
+        didCallOnChange = true;
+      };
+      render() {
+        return (
+          <div>
+            <Child />
+            <input
+              ref={inputRef}
+              type="checkbox"
+              checked={true}
+              onChange={this.handleChange}
+            />
+          </div>
+        );
+      }
+    }
+
+    ReactDOM.render(<Parent />, container);
+    inputRef.current.dispatchEvent(
+      new MouseEvent('click', {
+        bubbles: true,
+      }),
+    );
+    expect(didCallOnChange).toBe(true);
+  });
+
+  it('unmounted legacy roots should never clear newer root content from a container', () => {
+    const ref = React.createRef();
+
+    function OldApp() {
+      const hideOnFocus = () => {
+        // This app unmounts itself inside of a focus event.
+        ReactDOM.unmountComponentAtNode(container);
+      };
+
+      return (
+        <button onFocus={hideOnFocus} ref={ref}>
+          old
+        </button>
+      );
+    }
+
+    function NewApp() {
+      return <button ref={ref}>new</button>;
+    }
+
+    ReactDOM.render(<OldApp />, container);
+    ref.current.focus();
+
+    ReactDOM.render(<NewApp />, container);
+
+    // Calling focus again will flush previously scheduled discrete work for the old root-
+    // but this should not clear out the newly mounted app.
+    ref.current.focus();
+
+    expect(container.textContent).toBe('new');
   });
 });

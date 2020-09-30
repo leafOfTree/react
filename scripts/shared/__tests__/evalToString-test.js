@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,10 +7,9 @@
 'use strict';
 
 const evalToString = require('../evalToString');
-const babylon = require('babylon');
+const parser = require('@babel/parser');
 
-const parse = source =>
-  babylon.parse(`(${source});`).program.body[0].expression; // quick way to get an exp node
+const parse = source => parser.parse(`(${source});`).program.body[0].expression; // quick way to get an exp node
 
 const parseAndEval = source => evalToString(parse(source));
 

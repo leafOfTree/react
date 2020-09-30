@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18,9 +18,9 @@ import {TEXT_NODE} from '../shared/HTMLNodeType';
  * @param {string} text
  * @internal
  */
-let setTextContent = function(node: Element, text: string): void {
+const setTextContent = function(node: Element, text: string): void {
   if (text) {
-    let firstChild = node.firstChild;
+    const firstChild = node.firstChild;
 
     if (
       firstChild &&

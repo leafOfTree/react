@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,514 +7,199 @@
  * @flow
  */
 
-import type {Fiber} from './ReactFiber';
-import type {FiberRoot} from './ReactFiberRoot';
-import type {ReactNodeList} from 'shared/ReactTypes';
-import type {ExpirationTime} from './ReactFiberExpirationTime';
+import {enableNewReconciler} from 'shared/ReactFeatureFlags';
+
+// The entry file imports either the old or new version of the reconciler.
+// During build and testing, this indirection is always shimmed with the actual
+// modules, otherwise both reconcilers would be initialized. So this is really
+// only here for Flow purposes.
 
 import {
-  findCurrentHostFiber,
-  findCurrentHostFiberWithNoPortals,
-} from 'react-reconciler/reflection';
-import * as ReactInstanceMap from 'shared/ReactInstanceMap';
-import {HostComponent} from 'shared/ReactTypeOfWork';
-import emptyObject from 'fbjs/lib/emptyObject';
-import getComponentName from 'shared/getComponentName';
-import warning from 'fbjs/lib/warning';
+  createContainer as createContainer_old,
+  updateContainer as updateContainer_old,
+  batchedEventUpdates as batchedEventUpdates_old,
+  batchedUpdates as batchedUpdates_old,
+  unbatchedUpdates as unbatchedUpdates_old,
+  deferredUpdates as deferredUpdates_old,
+  discreteUpdates as discreteUpdates_old,
+  flushDiscreteUpdates as flushDiscreteUpdates_old,
+  flushControlled as flushControlled_old,
+  flushSync as flushSync_old,
+  flushPassiveEffects as flushPassiveEffects_old,
+  IsThisRendererActing as IsThisRendererActing_old,
+  getPublicRootInstance as getPublicRootInstance_old,
+  attemptSynchronousHydration as attemptSynchronousHydration_old,
+  attemptUserBlockingHydration as attemptUserBlockingHydration_old,
+  attemptContinuousHydration as attemptContinuousHydration_old,
+  attemptHydrationAtCurrentPriority as attemptHydrationAtCurrentPriority_old,
+  findHostInstance as findHostInstance_old,
+  findHostInstanceWithWarning as findHostInstanceWithWarning_old,
+  findHostInstanceWithNoPortals as findHostInstanceWithNoPortals_old,
+  shouldSuspend as shouldSuspend_old,
+  injectIntoDevTools as injectIntoDevTools_old,
+  act as act_old,
+  createPortal as createPortal_old,
+  createComponentSelector as createComponentSelector_old,
+  createHasPsuedoClassSelector as createHasPsuedoClassSelector_old,
+  createRoleSelector as createRoleSelector_old,
+  createTestNameSelector as createTestNameSelector_old,
+  createTextSelector as createTextSelector_old,
+  getFindAllNodesFailureDescription as getFindAllNodesFailureDescription_old,
+  findAllNodes as findAllNodes_old,
+  findBoundingRects as findBoundingRects_old,
+  focusWithin as focusWithin_old,
+  observeVisibleRects as observeVisibleRects_old,
+  registerMutableSourceForHydration as registerMutableSourceForHydration_old,
+  runWithPriority as runWithPriority_old,
+  getCurrentUpdateLanePriority as getCurrentUpdateLanePriority_old,
+} from './ReactFiberReconciler.old';
 
 import {
-  findCurrentUnmaskedContext,
-  isContextProvider,
-  processChildContext,
-} from './ReactFiberContext';
-import {createFiberRoot} from './ReactFiberRoot';
-import * as ReactFiberDevToolsHook from './ReactFiberDevToolsHook';
-import ReactFiberScheduler from './ReactFiberScheduler';
-import {insertUpdateIntoFiber} from './ReactFiberUpdateQueue';
-import ReactFiberInstrumentation from './ReactFiberInstrumentation';
-import ReactDebugCurrentFiber from './ReactDebugCurrentFiber';
+  createContainer as createContainer_new,
+  updateContainer as updateContainer_new,
+  batchedEventUpdates as batchedEventUpdates_new,
+  batchedUpdates as batchedUpdates_new,
+  unbatchedUpdates as unbatchedUpdates_new,
+  deferredUpdates as deferredUpdates_new,
+  discreteUpdates as discreteUpdates_new,
+  flushDiscreteUpdates as flushDiscreteUpdates_new,
+  flushControlled as flushControlled_new,
+  flushSync as flushSync_new,
+  flushPassiveEffects as flushPassiveEffects_new,
+  IsThisRendererActing as IsThisRendererActing_new,
+  getPublicRootInstance as getPublicRootInstance_new,
+  attemptSynchronousHydration as attemptSynchronousHydration_new,
+  attemptUserBlockingHydration as attemptUserBlockingHydration_new,
+  attemptContinuousHydration as attemptContinuousHydration_new,
+  attemptHydrationAtCurrentPriority as attemptHydrationAtCurrentPriority_new,
+  findHostInstance as findHostInstance_new,
+  findHostInstanceWithWarning as findHostInstanceWithWarning_new,
+  findHostInstanceWithNoPortals as findHostInstanceWithNoPortals_new,
+  shouldSuspend as shouldSuspend_new,
+  injectIntoDevTools as injectIntoDevTools_new,
+  act as act_new,
+  createPortal as createPortal_new,
+  createComponentSelector as createComponentSelector_new,
+  createHasPsuedoClassSelector as createHasPsuedoClassSelector_new,
+  createRoleSelector as createRoleSelector_new,
+  createTestNameSelector as createTestNameSelector_new,
+  createTextSelector as createTextSelector_new,
+  getFindAllNodesFailureDescription as getFindAllNodesFailureDescription_new,
+  findAllNodes as findAllNodes_new,
+  findBoundingRects as findBoundingRects_new,
+  focusWithin as focusWithin_new,
+  observeVisibleRects as observeVisibleRects_new,
+  registerMutableSourceForHydration as registerMutableSourceForHydration_new,
+  runWithPriority as runWithPriority_new,
+  getCurrentUpdateLanePriority as getCurrentUpdateLanePriority_new,
+} from './ReactFiberReconciler.new';
 
-let didWarnAboutNestedUpdates;
+export const createContainer = enableNewReconciler
+  ? createContainer_new
+  : createContainer_old;
+export const updateContainer = enableNewReconciler
+  ? updateContainer_new
+  : updateContainer_old;
+export const batchedEventUpdates = enableNewReconciler
+  ? batchedEventUpdates_new
+  : batchedEventUpdates_old;
+export const batchedUpdates = enableNewReconciler
+  ? batchedUpdates_new
+  : batchedUpdates_old;
+export const unbatchedUpdates = enableNewReconciler
+  ? unbatchedUpdates_new
+  : unbatchedUpdates_old;
+export const deferredUpdates = enableNewReconciler
+  ? deferredUpdates_new
+  : deferredUpdates_old;
+export const discreteUpdates = enableNewReconciler
+  ? discreteUpdates_new
+  : discreteUpdates_old;
+export const flushDiscreteUpdates = enableNewReconciler
+  ? flushDiscreteUpdates_new
+  : flushDiscreteUpdates_old;
+export const flushControlled = enableNewReconciler
+  ? flushControlled_new
+  : flushControlled_old;
+export const flushSync = enableNewReconciler ? flushSync_new : flushSync_old;
+export const flushPassiveEffects = enableNewReconciler
+  ? flushPassiveEffects_new
+  : flushPassiveEffects_old;
+export const IsThisRendererActing = enableNewReconciler
+  ? IsThisRendererActing_new
+  : IsThisRendererActing_old;
+export const getPublicRootInstance = enableNewReconciler
+  ? getPublicRootInstance_new
+  : getPublicRootInstance_old;
+export const attemptSynchronousHydration = enableNewReconciler
+  ? attemptSynchronousHydration_new
+  : attemptSynchronousHydration_old;
+export const attemptUserBlockingHydration = enableNewReconciler
+  ? attemptUserBlockingHydration_new
+  : attemptUserBlockingHydration_old;
+export const attemptContinuousHydration = enableNewReconciler
+  ? attemptContinuousHydration_new
+  : attemptContinuousHydration_old;
+export const attemptHydrationAtCurrentPriority = enableNewReconciler
+  ? attemptHydrationAtCurrentPriority_new
+  : attemptHydrationAtCurrentPriority_old;
+export const getCurrentUpdateLanePriority = enableNewReconciler
+  ? getCurrentUpdateLanePriority_new
+  : getCurrentUpdateLanePriority_old;
+export const findHostInstance = enableNewReconciler
+  ? findHostInstance_new
+  : findHostInstance_old;
+export const findHostInstanceWithWarning = enableNewReconciler
+  ? findHostInstanceWithWarning_new
+  : findHostInstanceWithWarning_old;
+export const findHostInstanceWithNoPortals = enableNewReconciler
+  ? findHostInstanceWithNoPortals_new
+  : findHostInstanceWithNoPortals_old;
+export const shouldSuspend = enableNewReconciler
+  ? shouldSuspend_new
+  : shouldSuspend_old;
+export const injectIntoDevTools = enableNewReconciler
+  ? injectIntoDevTools_new
+  : injectIntoDevTools_old;
+export const act = enableNewReconciler ? act_new : act_old;
+export const createPortal = enableNewReconciler
+  ? createPortal_new
+  : createPortal_old;
+export const createComponentSelector = enableNewReconciler
+  ? createComponentSelector_new
+  : createComponentSelector_old;
 
-if (__DEV__) {
-  didWarnAboutNestedUpdates = false;
-}
-
-export type Deadline = {
-  timeRemaining: () => number,
-};
-
-type OpaqueHandle = Fiber;
-type OpaqueRoot = FiberRoot;
-
-export type HostConfig<T, P, I, TI, HI, PI, C, CC, CX, PL> = {
-  getRootHostContext(rootContainerInstance: C): CX,
-  getChildHostContext(parentHostContext: CX, type: T, instance: C): CX,
-  getPublicInstance(instance: I | TI): PI,
-
-  createInstance(
-    type: T,
-    props: P,
-    rootContainerInstance: C,
-    hostContext: CX,
-    internalInstanceHandle: OpaqueHandle,
-  ): I,
-  appendInitialChild(parentInstance: I, child: I | TI): void,
-  finalizeInitialChildren(
-    parentInstance: I,
-    type: T,
-    props: P,
-    rootContainerInstance: C,
-    hostContext: CX,
-  ): boolean,
-
-  prepareUpdate(
-    instance: I,
-    type: T,
-    oldProps: P,
-    newProps: P,
-    rootContainerInstance: C,
-    hostContext: CX,
-  ): null | PL,
-
-  shouldSetTextContent(type: T, props: P): boolean,
-  shouldDeprioritizeSubtree(type: T, props: P): boolean,
-
-  createTextInstance(
-    text: string,
-    rootContainerInstance: C,
-    hostContext: CX,
-    internalInstanceHandle: OpaqueHandle,
-  ): TI,
-
-  scheduleDeferredCallback(
-    callback: (deadline: Deadline) => void,
-    options?: {timeout: number},
-  ): number,
-  cancelDeferredCallback(callbackID: number): void,
-
-  prepareForCommit(containerInfo: C): void,
-  resetAfterCommit(containerInfo: C): void,
-
-  now(): number,
-
-  +hydration?: HydrationHostConfig<T, P, I, TI, HI, C, CX, PL>,
-
-  +mutation?: MutableUpdatesHostConfig<T, P, I, TI, C, PL>,
-  +persistence?: PersistentUpdatesHostConfig<T, P, I, TI, C, CC, PL>,
-};
-
-type MutableUpdatesHostConfig<T, P, I, TI, C, PL> = {
-  commitUpdate(
-    instance: I,
-    updatePayload: PL,
-    type: T,
-    oldProps: P,
-    newProps: P,
-    internalInstanceHandle: OpaqueHandle,
-  ): void,
-  commitMount(
-    instance: I,
-    type: T,
-    newProps: P,
-    internalInstanceHandle: OpaqueHandle,
-  ): void,
-  commitTextUpdate(textInstance: TI, oldText: string, newText: string): void,
-  resetTextContent(instance: I): void,
-  appendChild(parentInstance: I, child: I | TI): void,
-  appendChildToContainer(container: C, child: I | TI): void,
-  insertBefore(parentInstance: I, child: I | TI, beforeChild: I | TI): void,
-  insertInContainerBefore(
-    container: C,
-    child: I | TI,
-    beforeChild: I | TI,
-  ): void,
-  removeChild(parentInstance: I, child: I | TI): void,
-  removeChildFromContainer(container: C, child: I | TI): void,
-};
-
-type PersistentUpdatesHostConfig<T, P, I, TI, C, CC, PL> = {
-  cloneInstance(
-    instance: I,
-    updatePayload: null | PL,
-    type: T,
-    oldProps: P,
-    newProps: P,
-    internalInstanceHandle: OpaqueHandle,
-    keepChildren: boolean,
-    recyclableInstance: I,
-  ): I,
-
-  createContainerChildSet(container: C): CC,
-
-  appendChildToContainerChildSet(childSet: CC, child: I | TI): void,
-  finalizeContainerChildren(container: C, newChildren: CC): void,
-
-  replaceContainerChildren(container: C, newChildren: CC): void,
-};
-
-type HydrationHostConfig<T, P, I, TI, HI, C, CX, PL> = {
-  // Optional hydration
-  canHydrateInstance(instance: HI, type: T, props: P): null | I,
-  canHydrateTextInstance(instance: HI, text: string): null | TI,
-  getNextHydratableSibling(instance: I | TI | HI): null | HI,
-  getFirstHydratableChild(parentInstance: I | C): null | HI,
-  hydrateInstance(
-    instance: I,
-    type: T,
-    props: P,
-    rootContainerInstance: C,
-    hostContext: CX,
-    internalInstanceHandle: OpaqueHandle,
-  ): null | PL,
-  hydrateTextInstance(
-    textInstance: TI,
-    text: string,
-    internalInstanceHandle: OpaqueHandle,
-  ): boolean,
-  didNotMatchHydratedContainerTextInstance(
-    parentContainer: C,
-    textInstance: TI,
-    text: string,
-  ): void,
-  didNotMatchHydratedTextInstance(
-    parentType: T,
-    parentProps: P,
-    parentInstance: I,
-    textInstance: TI,
-    text: string,
-  ): void,
-  didNotHydrateContainerInstance(parentContainer: C, instance: I | TI): void,
-  didNotHydrateInstance(
-    parentType: T,
-    parentProps: P,
-    parentInstance: I,
-    instance: I | TI,
-  ): void,
-  didNotFindHydratableContainerInstance(
-    parentContainer: C,
-    type: T,
-    props: P,
-  ): void,
-  didNotFindHydratableContainerTextInstance(
-    parentContainer: C,
-    text: string,
-  ): void,
-  didNotFindHydratableInstance(
-    parentType: T,
-    parentProps: P,
-    parentInstance: I,
-    type: T,
-    props: P,
-  ): void,
-  didNotFindHydratableTextInstance(
-    parentType: T,
-    parentProps: P,
-    parentInstance: I,
-    text: string,
-  ): void,
-};
-
-// 0 is PROD, 1 is DEV.
-// Might add PROFILE later.
-type BundleType = 0 | 1;
-
-type DevToolsConfig<I, TI> = {|
-  bundleType: BundleType,
-  version: string,
-  rendererPackageName: string,
-  // Note: this actually *does* depend on Fiber internal fields.
-  // Used by "inspect clicked DOM element" in React DevTools.
-  findFiberByHostInstance?: (instance: I | TI) => Fiber,
-  // Used by RN in-app inspector.
-  // This API is unfortunately RN-specific.
-  // TODO: Change it to accept Fiber instead and type it properly.
-  getInspectorDataForViewTag?: (tag: number) => Object,
-|};
-
-export type Reconciler<C, I, TI> = {
-  createContainer(
-    containerInfo: C,
-    isAsync: boolean,
-    hydrate: boolean,
-  ): OpaqueRoot,
-  updateContainer(
-    element: ReactNodeList,
-    container: OpaqueRoot,
-    parentComponent: ?React$Component<any, any>,
-    callback: ?Function,
-  ): ExpirationTime,
-  updateContainerAtExpirationTime(
-    element: ReactNodeList,
-    container: OpaqueRoot,
-    parentComponent: ?React$Component<any, any>,
-    expirationTime: ExpirationTime,
-    callback: ?Function,
-  ): ExpirationTime,
-  flushRoot(root: OpaqueRoot, expirationTime: ExpirationTime): void,
-  requestWork(root: OpaqueRoot, expirationTime: ExpirationTime): void,
-  batchedUpdates<A>(fn: () => A): A,
-  unbatchedUpdates<A>(fn: () => A): A,
-  flushSync<A>(fn: () => A): A,
-  flushControlled(fn: () => mixed): void,
-  deferredUpdates<A>(fn: () => A): A,
-  interactiveUpdates<A>(fn: () => A): A,
-  injectIntoDevTools(devToolsConfig: DevToolsConfig<I, TI>): boolean,
-  computeUniqueAsyncExpiration(): ExpirationTime,
-
-  // Used to extract the return value from the initial render. Legacy API.
-  getPublicRootInstance(
-    container: OpaqueRoot,
-  ): React$Component<any, any> | TI | I | null,
-
-  // Use for findDOMNode/findHostNode. Legacy API.
-  findHostInstance(component: Fiber): I | TI | null,
-
-  // Used internally for filtering out portals. Legacy API.
-  findHostInstanceWithNoPortals(component: Fiber): I | TI | null,
-};
-
-function getContextForSubtree(
-  parentComponent: ?React$Component<any, any>,
-): Object {
-  if (!parentComponent) {
-    return emptyObject;
-  }
-
-  const fiber = ReactInstanceMap.get(parentComponent);
-  const parentContext = findCurrentUnmaskedContext(fiber);
-  return isContextProvider(fiber)
-    ? processChildContext(fiber, parentContext)
-    : parentContext;
-}
-
-export default function<T, P, I, TI, HI, PI, C, CC, CX, PL>(
-  config: HostConfig<T, P, I, TI, HI, PI, C, CC, CX, PL>,
-): Reconciler<C, I, TI> {
-  const {getPublicInstance} = config;
-
-  const {
-    computeUniqueAsyncExpiration,
-    recalculateCurrentTime,
-    computeExpirationForFiber,
-    scheduleWork,
-    requestWork,
-    flushRoot,
-    batchedUpdates,
-    unbatchedUpdates,
-    flushSync,
-    flushControlled,
-    deferredUpdates,
-    syncUpdates,
-    interactiveUpdates,
-    flushInteractiveUpdates,
-  } = ReactFiberScheduler(config);
-
-  function scheduleRootUpdate(
-    current: Fiber,
-    element: ReactNodeList,
-    currentTime: ExpirationTime,
-    expirationTime: ExpirationTime,
-    callback: ?Function,
-  ) {
-    if (__DEV__) {
-      if (
-        ReactDebugCurrentFiber.phase === 'render' &&
-        ReactDebugCurrentFiber.current !== null &&
-        !didWarnAboutNestedUpdates
-      ) {
-        didWarnAboutNestedUpdates = true;
-        warning(
-          false,
-          'Render methods should be a pure function of props and state; ' +
-            'triggering nested component updates from render is not allowed. ' +
-            'If necessary, trigger nested updates in componentDidUpdate.\n\n' +
-            'Check the render method of %s.',
-          getComponentName(ReactDebugCurrentFiber.current) || 'Unknown',
-        );
-      }
-    }
-
-    callback = callback === undefined ? null : callback;
-    if (__DEV__) {
-      warning(
-        callback === null || typeof callback === 'function',
-        'render(...): Expected the last optional `callback` argument to be a ' +
-          'function. Instead received: %s.',
-        callback,
-      );
-    }
-
-    const update = {
-      expirationTime,
-      partialState: {element},
-      callback,
-      isReplace: false,
-      isForced: false,
-      capturedValue: null,
-      next: null,
-    };
-    insertUpdateIntoFiber(current, update);
-    scheduleWork(current, expirationTime);
-
-    return expirationTime;
-  }
-
-  function updateContainerAtExpirationTime(
-    element: ReactNodeList,
-    container: OpaqueRoot,
-    parentComponent: ?React$Component<any, any>,
-    currentTime: ExpirationTime,
-    expirationTime: ExpirationTime,
-    callback: ?Function,
-  ) {
-    // TODO: If this is a nested container, this won't be the root.
-    const current = container.current;
-
-    if (__DEV__) {
-      if (ReactFiberInstrumentation.debugTool) {
-        if (current.alternate === null) {
-          ReactFiberInstrumentation.debugTool.onMountContainer(container);
-        } else if (element === null) {
-          ReactFiberInstrumentation.debugTool.onUnmountContainer(container);
-        } else {
-          ReactFiberInstrumentation.debugTool.onUpdateContainer(container);
-        }
-      }
-    }
-
-    const context = getContextForSubtree(parentComponent);
-    if (container.context === null) {
-      container.context = context;
-    } else {
-      container.pendingContext = context;
-    }
-
-    return scheduleRootUpdate(
-      current,
-      element,
-      currentTime,
-      expirationTime,
-      callback,
-    );
-  }
-
-  function findHostInstance(fiber: Fiber): PI | null {
-    const hostFiber = findCurrentHostFiber(fiber);
-    if (hostFiber === null) {
-      return null;
-    }
-    return hostFiber.stateNode;
-  }
-
-  return {
-    createContainer(
-      containerInfo: C,
-      isAsync: boolean,
-      hydrate: boolean,
-    ): OpaqueRoot {
-      return createFiberRoot(containerInfo, isAsync, hydrate);
-    },
-
-    updateContainer(
-      element: ReactNodeList,
-      container: OpaqueRoot,
-      parentComponent: ?React$Component<any, any>,
-      callback: ?Function,
-    ): ExpirationTime {
-      const current = container.current;
-      const currentTime = recalculateCurrentTime();
-      const expirationTime = computeExpirationForFiber(current);
-      return updateContainerAtExpirationTime(
-        element,
-        container,
-        parentComponent,
-        currentTime,
-        expirationTime,
-        callback,
-      );
-    },
-
-    updateContainerAtExpirationTime(
-      element,
-      container,
-      parentComponent,
-      expirationTime,
-      callback,
-    ) {
-      const currentTime = recalculateCurrentTime();
-      return updateContainerAtExpirationTime(
-        element,
-        container,
-        parentComponent,
-        currentTime,
-        expirationTime,
-        callback,
-      );
-    },
-
-    flushRoot,
-
-    requestWork,
-
-    computeUniqueAsyncExpiration,
-
-    batchedUpdates,
-
-    unbatchedUpdates,
-
-    deferredUpdates,
-
-    syncUpdates,
-
-    interactiveUpdates,
-
-    flushInteractiveUpdates,
-
-    flushControlled,
-
-    flushSync,
-
-    getPublicRootInstance(
-      container: OpaqueRoot,
-    ): React$Component<any, any> | PI | null {
-      const containerFiber = container.current;
-      if (!containerFiber.child) {
-        return null;
-      }
-      switch (containerFiber.child.tag) {
-        case HostComponent:
-          return getPublicInstance(containerFiber.child.stateNode);
-        default:
-          return containerFiber.child.stateNode;
-      }
-    },
-
-    findHostInstance,
-
-    findHostInstanceWithNoPortals(fiber: Fiber): PI | null {
-      const hostFiber = findCurrentHostFiberWithNoPortals(fiber);
-      if (hostFiber === null) {
-        return null;
-      }
-      return hostFiber.stateNode;
-    },
-
-    injectIntoDevTools(devToolsConfig: DevToolsConfig<I, TI>): boolean {
-      const {findFiberByHostInstance} = devToolsConfig;
-      return ReactFiberDevToolsHook.injectInternals({
-        ...devToolsConfig,
-        findHostInstanceByFiber(fiber: Fiber): I | TI | null {
-          return findHostInstance(fiber);
-        },
-        findFiberByHostInstance(instance: I | TI): Fiber | null {
-          if (!findFiberByHostInstance) {
-            // Might not be implemented by the renderer.
-            return null;
-          }
-          return findFiberByHostInstance(instance);
-        },
-      });
-    },
-  };
-}
+//TODO: "psuedo" is spelled "pseudo"
+export const createHasPsuedoClassSelector = enableNewReconciler
+  ? createHasPsuedoClassSelector_new
+  : createHasPsuedoClassSelector_old;
+export const createRoleSelector = enableNewReconciler
+  ? createRoleSelector_new
+  : createRoleSelector_old;
+export const createTextSelector = enableNewReconciler
+  ? createTextSelector_new
+  : createTextSelector_old;
+export const createTestNameSelector = enableNewReconciler
+  ? createTestNameSelector_new
+  : createTestNameSelector_old;
+export const getFindAllNodesFailureDescription = enableNewReconciler
+  ? getFindAllNodesFailureDescription_new
+  : getFindAllNodesFailureDescription_old;
+export const findAllNodes = enableNewReconciler
+  ? findAllNodes_new
+  : findAllNodes_old;
+export const findBoundingRects = enableNewReconciler
+  ? findBoundingRects_new
+  : findBoundingRects_old;
+export const focusWithin = enableNewReconciler
+  ? focusWithin_new
+  : focusWithin_old;
+export const observeVisibleRects = enableNewReconciler
+  ? observeVisibleRects_new
+  : observeVisibleRects_old;
+export const registerMutableSourceForHydration = enableNewReconciler
+  ? registerMutableSourceForHydration_new
+  : registerMutableSourceForHydration_old;
+export const runWithPriority = enableNewReconciler
+  ? runWithPriority_new
+  : runWithPriority_old;

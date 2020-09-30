@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -74,7 +74,7 @@ describe('ReactPureComponent', () => {
     }
 
     const container = document.createElement('div');
-    expect(() => ReactDOM.render(<Component />, container)).toWarnDev(
+    expect(() => ReactDOM.render(<Component />, container)).toErrorDev(
       'Warning: ' +
         'Component has a method called shouldComponentUpdate(). ' +
         'shouldComponentUpdate should not be used when extending React.PureComponent. ' +
@@ -108,7 +108,7 @@ describe('ReactPureComponent', () => {
       }
     }
     const container = document.createElement('div');
-    expect(() => ReactDOM.render(<PureComponent />, container)).toWarnDev(
+    expect(() => ReactDOM.render(<PureComponent />, container)).toErrorDev(
       'Warning: ' +
         'PureComponent has a method called shouldComponentUpdate(). ' +
         'shouldComponentUpdate should not be used when extending React.PureComponent. ' +

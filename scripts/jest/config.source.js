@@ -1,23 +1,35 @@
 'use strict';
 
-module.exports = {
-  haste: {
-    hasteImplModulePath: require.resolve('./noHaste.js'),
-  },
+const baseConfig = require('./config.base');
+
+const RELEASE_CHANNEL = process.env.RELEASE_CHANNEL;
+
+// Default to building in experimental mode. If the release channel is set via
+// an environment variable, then check if it's "experimental".
+const __EXPERIMENTAL__ =
+  typeof RELEASE_CHANNEL === 'string'
+    ? RELEASE_CHANNEL === 'experimental'
+    : true;
+
+const preferredExtension = __EXPERIMENTAL__ ? '.js' : '.stable.js';
+
+const moduleNameMapper = {};
+moduleNameMapper[
+  '^react$'
+] = `<rootDir>/packages/react/index${preferredExtension}`;
+moduleNameMapper[
+  '^react-dom$'
+] = `<rootDir>/packages/react-dom/index${preferredExtension}`;
+
+module.exports = Object.assign({}, baseConfig, {
+  // Prefer the stable forks for tests.
+  moduleNameMapper,
   modulePathIgnorePatterns: [
-    '<rootDir>/scripts/rollup/shims/',
-    '<rootDir>/scripts/bench/',
+    ...baseConfig.modulePathIgnorePatterns,
+    'packages/react-devtools-shared',
   ],
-  transform: {
-    '.*': require.resolve('./preprocessor.js'),
-  },
-  setupFiles: [require.resolve('./setupEnvironment.js')],
-  setupTestFrameworkScriptFile: require.resolve('./setupTests.js'),
-  // Only include files directly in __tests__, not in nested folders.
-  testRegex: '/__tests__/[^/]*(\\.js|\\.coffee|[^d]\\.ts)$',
-  moduleFileExtensions: ['js', 'json', 'node', 'coffee', 'ts'],
-  rootDir: process.cwd(),
-  roots: ['<rootDir>/packages', '<rootDir>/scripts'],
-  collectCoverageFrom: ['packages/**/*.js'],
-  timers: 'fake',
-};
+  setupFiles: [
+    ...baseConfig.setupFiles,
+    require.resolve('./setupHostConfigs.js'),
+  ],
+});

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,7 +10,6 @@
 const minimatch = require('minimatch');
 const CLIEngine = require('eslint').CLIEngine;
 const listChangedFiles = require('../shared/listChangedFiles');
-const {es5Paths, esNextPaths} = require('../shared/pathsByLanguageVersion');
 
 const allPaths = ['**/*.js'];
 
@@ -28,6 +27,10 @@ function runESLintOnFilesWithOptions(filePatterns, onlyChanged, options) {
     ? intersect(changedFiles, filePatterns)
     : filePatterns;
   const report = cli.executeOnFiles(finalFilePatterns);
+
+  if (options != null && options.fix === true) {
+    CLIEngine.outputFixes(report);
+  }
 
   // When using `ignorePattern`, eslint will show `File ignored...` warnings for any ignores.
   // We don't care because we *expect* some passed files will be ignores if `ignorePattern` is used.
@@ -65,25 +68,10 @@ function runESLint({onlyChanged}) {
   if (typeof onlyChanged !== 'boolean') {
     throw new Error('Pass options.onlyChanged as a boolean.');
   }
-  let errorCount = 0;
-  let warningCount = 0;
-  let output = '';
-  [
-    runESLintOnFilesWithOptions(allPaths, onlyChanged, {
-      configFile: `${__dirname}/eslintrc.default.js`,
-      ignorePattern: [...es5Paths, ...esNextPaths],
-    }),
-    runESLintOnFilesWithOptions(esNextPaths, onlyChanged, {
-      configFile: `${__dirname}/eslintrc.esnext.js`,
-    }),
-    runESLintOnFilesWithOptions(es5Paths, onlyChanged, {
-      configFile: `${__dirname}/eslintrc.es5.js`,
-    }),
-  ].forEach(result => {
-    errorCount += result.errorCount;
-    warningCount += result.warningCount;
-    output += result.output;
-  });
+  const {errorCount, warningCount, output} = runESLintOnFilesWithOptions(
+    allPaths,
+    onlyChanged
+  );
   console.log(output);
   return errorCount === 0 && warningCount === 0;
 }

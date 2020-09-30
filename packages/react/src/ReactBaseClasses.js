@@ -1,15 +1,18 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
-import emptyObject from 'fbjs/lib/emptyObject';
-import invariant from 'fbjs/lib/invariant';
-import lowPriorityWarning from 'shared/lowPriorityWarning';
+import invariant from 'shared/invariant';
 
 import ReactNoopUpdateQueue from './ReactNoopUpdateQueue';
+
+const emptyObject = {};
+if (__DEV__) {
+  Object.freeze(emptyObject);
+}
 
 /**
  * Base class helpers for the updating state of a component.
@@ -17,6 +20,7 @@ import ReactNoopUpdateQueue from './ReactNoopUpdateQueue';
 function Component(props, context, updater) {
   this.props = props;
   this.context = context;
+  // If a component has string refs, we will assign a different object later.
   this.refs = emptyObject;
   // We initialize the default updater but the real one gets injected by the
   // renderer.
@@ -100,8 +104,7 @@ if (__DEV__) {
   const defineDeprecationWarning = function(methodName, info) {
     Object.defineProperty(Component.prototype, methodName, {
       get: function() {
-        lowPriorityWarning(
-          false,
+        console.warn(
           '%s(...) is deprecated in plain JavaScript React classes. %s',
           info[0],
           info[1],
@@ -126,6 +129,7 @@ ComponentDummy.prototype = Component.prototype;
 function PureComponent(props, context, updater) {
   this.props = props;
   this.context = context;
+  // If a component has string refs, we will assign a different object later.
   this.refs = emptyObject;
   this.updater = updater || ReactNoopUpdateQueue;
 }

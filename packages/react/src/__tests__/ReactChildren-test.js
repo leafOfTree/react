@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21,7 +21,7 @@ describe('ReactChildren', () => {
 
   it('should support identity for simple', () => {
     const context = {};
-    const callback = jasmine.createSpy().and.callFake(function(kid, index) {
+    const callback = jest.fn().mockImplementation(function(kid, index) {
       expect(this).toBe(context);
       return kid;
     });
@@ -34,7 +34,7 @@ describe('ReactChildren', () => {
     const instance = <div>{simpleKid}</div>;
     React.Children.forEach(instance.props.children, callback, context);
     expect(callback).toHaveBeenCalledWith(simpleKid, 0);
-    callback.calls.reset();
+    callback.mockClear();
     const mappedChildren = React.Children.map(
       instance.props.children,
       callback,
@@ -46,7 +46,7 @@ describe('ReactChildren', () => {
 
   it('should support Portal components', () => {
     const context = {};
-    const callback = jasmine.createSpy().and.callFake(function(kid, index) {
+    const callback = jest.fn().mockImplementation(function(kid, index) {
       expect(this).toBe(context);
       return kid;
     });
@@ -59,7 +59,7 @@ describe('ReactChildren', () => {
     const parentInstance = <div>{reactPortal}</div>;
     React.Children.forEach(parentInstance.props.children, callback, context);
     expect(callback).toHaveBeenCalledWith(reactPortal, 0);
-    callback.calls.reset();
+    callback.mockClear();
     const mappedChildren = React.Children.map(
       parentInstance.props.children,
       callback,
@@ -69,60 +69,9 @@ describe('ReactChildren', () => {
     expect(mappedChildren[0]).toEqual(reactPortal);
   });
 
-  it('should support Call components', () => {
-    const context = {};
-    const callback = jasmine.createSpy().and.callFake(function(kid, index) {
-      expect(this).toBe(context);
-      return kid;
-    });
-    const ReactCallReturn = require('react-call-return');
-    const reactCall = ReactCallReturn.unstable_createCall(
-      <span key="simple" />,
-      () => {},
-    );
-
-    const parentInstance = <div>{reactCall}</div>;
-    React.Children.forEach(parentInstance.props.children, callback, context);
-    expect(callback).toHaveBeenCalledWith(reactCall, 0);
-    callback.calls.reset();
-    const mappedChildren = React.Children.map(
-      parentInstance.props.children,
-      callback,
-      context,
-    );
-    expect(callback).toHaveBeenCalledWith(reactCall, 0);
-    expect(mappedChildren[0].type).toEqual(reactCall.type);
-    expect(mappedChildren[0].props).toEqual(reactCall.props);
-  });
-
-  it('should support Return components', () => {
-    const context = {};
-    const callback = jasmine.createSpy().and.callFake(function(kid, index) {
-      expect(this).toBe(context);
-      return kid;
-    });
-    const ReactCallReturn = require('react-call-return');
-    const reactReturn = ReactCallReturn.unstable_createReturn(
-      <span key="simple" />,
-    );
-
-    const parentInstance = <div>{reactReturn}</div>;
-    React.Children.forEach(parentInstance.props.children, callback, context);
-    expect(callback).toHaveBeenCalledWith(reactReturn, 0);
-    callback.calls.reset();
-    const mappedChildren = React.Children.map(
-      parentInstance.props.children,
-      callback,
-      context,
-    );
-    expect(callback).toHaveBeenCalledWith(reactReturn, 0);
-    expect(mappedChildren[0].props).toEqual(reactReturn.props);
-    expect(mappedChildren[0].type).toEqual(reactReturn.type);
-  });
-
   it('should treat single arrayless child as being in array', () => {
     const context = {};
-    const callback = jasmine.createSpy().and.callFake(function(kid, index) {
+    const callback = jest.fn().mockImplementation(function(kid, index) {
       expect(this).toBe(context);
       return kid;
     });
@@ -131,7 +80,7 @@ describe('ReactChildren', () => {
     const instance = <div>{simpleKid}</div>;
     React.Children.forEach(instance.props.children, callback, context);
     expect(callback).toHaveBeenCalledWith(simpleKid, 0);
-    callback.calls.reset();
+    callback.mockClear();
     const mappedChildren = React.Children.map(
       instance.props.children,
       callback,
@@ -143,7 +92,7 @@ describe('ReactChildren', () => {
 
   it('should treat single child in array as expected', () => {
     const context = {};
-    const callback = jasmine.createSpy().and.callFake(function(kid, index) {
+    const callback = jest.fn().mockImplementation(function(kid, index) {
       expect(this).toBe(context);
       return kid;
     });
@@ -152,7 +101,7 @@ describe('ReactChildren', () => {
     const instance = <div>{[simpleKid]}</div>;
     React.Children.forEach(instance.props.children, callback, context);
     expect(callback).toHaveBeenCalledWith(simpleKid, 0);
-    callback.calls.reset();
+    callback.mockClear();
     const mappedChildren = React.Children.map(
       instance.props.children,
       callback,
@@ -170,7 +119,7 @@ describe('ReactChildren', () => {
     const four = <div key="keyFour" />;
     const context = {};
 
-    const callback = jasmine.createSpy().and.callFake(function(kid) {
+    const callback = jest.fn().mockImplementation(function(kid) {
       expect(this).toBe(context);
       return kid;
     });
@@ -191,7 +140,7 @@ describe('ReactChildren', () => {
       expect(callback).toHaveBeenCalledWith(two, 2);
       expect(callback).toHaveBeenCalledWith(three, 3);
       expect(callback).toHaveBeenCalledWith(four, 4);
-      callback.calls.reset();
+      callback.mockClear();
     }
 
     React.Children.forEach(instance.props.children, callback, context);
@@ -216,7 +165,7 @@ describe('ReactChildren', () => {
     const a = <a key="aNode" />;
 
     const context = {};
-    const callback = jasmine.createSpy().and.callFake(function(kid) {
+    const callback = jest.fn().mockImplementation(function(kid) {
       expect(this).toBe(context);
       return kid;
     });
@@ -236,7 +185,7 @@ describe('ReactChildren', () => {
     );
 
     function assertCalls() {
-      expect(callback.calls.count()).toBe(9);
+      expect(callback).toHaveBeenCalledTimes(9);
       expect(callback).toHaveBeenCalledWith(div, 0);
       expect(callback).toHaveBeenCalledWith(span, 1);
       expect(callback).toHaveBeenCalledWith(a, 2);
@@ -246,7 +195,7 @@ describe('ReactChildren', () => {
       expect(callback).toHaveBeenCalledWith(null, 6);
       expect(callback).toHaveBeenCalledWith(null, 7);
       expect(callback).toHaveBeenCalledWith(null, 8);
-      callback.calls.reset();
+      callback.mockClear();
     }
 
     React.Children.forEach(instance.props.children, callback, context);
@@ -276,21 +225,21 @@ describe('ReactChildren', () => {
     const five = <div key="keyFive" />;
 
     const context = {};
-    const callback = jasmine.createSpy().and.callFake(function(kid) {
+    const callback = jest.fn().mockImplementation(function(kid) {
       return kid;
     });
 
     const instance = <div>{[[zero, one, two], [three, four], five]}</div>;
 
     function assertCalls() {
-      expect(callback.calls.count()).toBe(6);
+      expect(callback).toHaveBeenCalledTimes(6);
       expect(callback).toHaveBeenCalledWith(zero, 0);
       expect(callback).toHaveBeenCalledWith(one, 1);
       expect(callback).toHaveBeenCalledWith(two, 2);
       expect(callback).toHaveBeenCalledWith(three, 3);
       expect(callback).toHaveBeenCalledWith(four, 4);
       expect(callback).toHaveBeenCalledWith(five, 5);
-      callback.calls.reset();
+      callback.mockClear();
     }
 
     React.Children.forEach(instance.props.children, callback, context);
@@ -314,7 +263,7 @@ describe('ReactChildren', () => {
     const zeroForceKey = <div key="keyZero" />;
     const oneForceKey = <div key="keyOne" />;
     const context = {};
-    const callback = jasmine.createSpy().and.callFake(function(kid) {
+    const callback = jest.fn().mockImplementation(function(kid) {
       expect(this).toBe(context);
       return kid;
     });
@@ -329,7 +278,7 @@ describe('ReactChildren', () => {
     function assertCalls() {
       expect(callback).toHaveBeenCalledWith(zeroForceKey, 0);
       expect(callback).toHaveBeenCalledWith(oneForceKey, 1);
-      callback.calls.reset();
+      callback.mockClear();
     }
 
     React.Children.forEach(forcedKeys.props.children, callback, context);
@@ -364,22 +313,22 @@ describe('ReactChildren', () => {
     };
 
     const context = {};
-    const callback = jasmine.createSpy().and.callFake(function(kid) {
+    const callback = jest.fn().mockImplementation(function(kid) {
       expect(this).toBe(context);
       return kid;
     });
 
     let instance;
-    expect(() => (instance = <div>{threeDivIterable}</div>)).toWarnDev(
-      'Warning: Each child in an array or iterator should have a unique "key" prop.',
+    expect(() => (instance = <div>{threeDivIterable}</div>)).toErrorDev(
+      'Warning: Each child in a list should have a unique "key" prop.',
     );
 
     function assertCalls() {
-      expect(callback.calls.count()).toBe(3);
+      expect(callback).toHaveBeenCalledTimes(3);
       expect(callback).toHaveBeenCalledWith(<div />, 0);
       expect(callback).toHaveBeenCalledWith(<div />, 1);
       expect(callback).toHaveBeenCalledWith(<div />, 2);
-      callback.calls.reset();
+      callback.mockClear();
     }
 
     React.Children.forEach(instance.props.children, callback, context);
@@ -415,7 +364,7 @@ describe('ReactChildren', () => {
     };
 
     const context = {};
-    const callback = jasmine.createSpy().and.callFake(function(kid) {
+    const callback = jest.fn().mockImplementation(function(kid) {
       expect(this).toBe(context);
       return kid;
     });
@@ -423,11 +372,11 @@ describe('ReactChildren', () => {
     const instance = <div>{threeDivIterable}</div>;
 
     function assertCalls() {
-      expect(callback.calls.count()).toBe(3);
+      expect(callback).toHaveBeenCalledTimes(3);
       expect(callback).toHaveBeenCalledWith(<div key="#1" />, 0);
       expect(callback).toHaveBeenCalledWith(<div key="#2" />, 1);
       expect(callback).toHaveBeenCalledWith(<div key="#3" />, 2);
-      callback.calls.reset();
+      callback.mockClear();
     }
 
     React.Children.forEach(instance.props.children, callback, context);
@@ -463,17 +412,17 @@ describe('ReactChildren', () => {
       );
 
       const context = {};
-      const callback = jasmine.createSpy().and.callFake(function(kid) {
+      const callback = jest.fn().mockImplementation(function(kid) {
         expect(this).toBe(context);
         return kid;
       });
 
       const assertCalls = function() {
-        expect(callback.calls.count()).toBe(3);
+        expect(callback).toHaveBeenCalledTimes(3);
         expect(callback).toHaveBeenCalledWith(5, 0);
         expect(callback).toHaveBeenCalledWith(12, 1);
         expect(callback).toHaveBeenCalledWith(13, 2);
-        callback.calls.reset();
+        callback.mockClear();
       };
 
       React.Children.forEach(instance.props.children, callback, context);
@@ -505,16 +454,16 @@ describe('ReactChildren', () => {
     );
 
     const context = {};
-    const callback = jasmine.createSpy().and.callFake(function(kid) {
+    const callback = jest.fn().mockImplementation(function(kid) {
       expect(this).toBe(context);
       return kid;
     });
 
     function assertCalls() {
-      expect(callback.calls.count()).toBe(2, 0);
+      expect(callback).toHaveBeenCalledTimes(2);
       expect(callback).toHaveBeenCalledWith('a', 0);
       expect(callback).toHaveBeenCalledWith(13, 1);
-      callback.calls.reset();
+      callback.mockClear();
     }
 
     React.Children.forEach(instance.props.children, callback, context);
@@ -587,7 +536,7 @@ describe('ReactChildren', () => {
       <span />, // Map from null to something.
       <div key="keyFour" />,
     ];
-    const callback = jasmine.createSpy().and.callFake(function(kid, index) {
+    const callback = jest.fn().mockImplementation(function(kid, index) {
       return mapped[index];
     });
 
@@ -607,13 +556,13 @@ describe('ReactChildren', () => {
     expect(callback).toHaveBeenCalledWith(two, 2);
     expect(callback).toHaveBeenCalledWith(three, 3);
     expect(callback).toHaveBeenCalledWith(four, 4);
-    callback.calls.reset();
+    callback.mockClear();
 
     const mappedChildren = React.Children.map(
       instance.props.children,
       callback,
     );
-    expect(callback.calls.count()).toBe(5);
+    expect(callback).toHaveBeenCalledTimes(5);
     expect(React.Children.count(mappedChildren)).toBe(4);
     // Keys default to indices.
     expect([
@@ -648,7 +597,7 @@ describe('ReactChildren', () => {
     const fourMapped = <div key="keyFour" />;
     const fiveMapped = <div />;
 
-    const callback = jasmine.createSpy().and.callFake(function(kid) {
+    const callback = jest.fn().mockImplementation(function(kid) {
       switch (kid) {
         case zero:
           return zeroMapped;
@@ -667,20 +616,20 @@ describe('ReactChildren', () => {
     const instance = <div>{[frag]}</div>;
 
     React.Children.forEach(instance.props.children, callback);
-    expect(callback.calls.count()).toBe(6);
+    expect(callback).toHaveBeenCalledTimes(6);
     expect(callback).toHaveBeenCalledWith(zero, 0);
     expect(callback).toHaveBeenCalledWith(one, 1);
     expect(callback).toHaveBeenCalledWith(two, 2);
     expect(callback).toHaveBeenCalledWith(three, 3);
     expect(callback).toHaveBeenCalledWith(four, 4);
     expect(callback).toHaveBeenCalledWith(five, 5);
-    callback.calls.reset();
+    callback.mockClear();
 
     const mappedChildren = React.Children.map(
       instance.props.children,
       callback,
     );
-    expect(callback.calls.count()).toBe(6);
+    expect(callback).toHaveBeenCalledTimes(6);
     expect(callback).toHaveBeenCalledWith(zero, 0);
     expect(callback).toHaveBeenCalledWith(one, 1);
     expect(callback).toHaveBeenCalledWith(two, 2);
@@ -917,6 +866,74 @@ describe('ReactChildren', () => {
     ]);
   });
 
+  it('should combine keys when map returns an array', () => {
+    const instance = (
+      <div>
+        <div key="a" />
+        {false}
+        <div key="b" />
+        <p />
+      </div>
+    );
+    const mappedChildren = React.Children.map(
+      instance.props.children,
+      // Try a few things: keyed, unkeyed, hole, and a cloned element.
+      kid => [
+        <span key="x" />,
+        null,
+        <span key="y" />,
+        kid,
+        kid && React.cloneElement(kid, {key: 'z'}),
+        <hr />,
+      ],
+    );
+    expect(mappedChildren.length).toBe(18);
+
+    // <div key="a">
+    expect(mappedChildren[0].type).toBe('span');
+    expect(mappedChildren[0].key).toBe('.$a/.$x');
+    expect(mappedChildren[1].type).toBe('span');
+    expect(mappedChildren[1].key).toBe('.$a/.$y');
+    expect(mappedChildren[2].type).toBe('div');
+    expect(mappedChildren[2].key).toBe('.$a/.$a');
+    expect(mappedChildren[3].type).toBe('div');
+    expect(mappedChildren[3].key).toBe('.$a/.$z');
+    expect(mappedChildren[4].type).toBe('hr');
+    expect(mappedChildren[4].key).toBe('.$a/.5');
+
+    // false
+    expect(mappedChildren[5].type).toBe('span');
+    expect(mappedChildren[5].key).toBe('.1/.$x');
+    expect(mappedChildren[6].type).toBe('span');
+    expect(mappedChildren[6].key).toBe('.1/.$y');
+    expect(mappedChildren[7].type).toBe('hr');
+    expect(mappedChildren[7].key).toBe('.1/.5');
+
+    // <div key="b">
+    expect(mappedChildren[8].type).toBe('span');
+    expect(mappedChildren[8].key).toBe('.$b/.$x');
+    expect(mappedChildren[9].type).toBe('span');
+    expect(mappedChildren[9].key).toBe('.$b/.$y');
+    expect(mappedChildren[10].type).toBe('div');
+    expect(mappedChildren[10].key).toBe('.$b/.$b');
+    expect(mappedChildren[11].type).toBe('div');
+    expect(mappedChildren[11].key).toBe('.$b/.$z');
+    expect(mappedChildren[12].type).toBe('hr');
+    expect(mappedChildren[12].key).toBe('.$b/.5');
+
+    // <p>
+    expect(mappedChildren[13].type).toBe('span');
+    expect(mappedChildren[13].key).toBe('.3/.$x');
+    expect(mappedChildren[14].type).toBe('span');
+    expect(mappedChildren[14].key).toBe('.3/.$y');
+    expect(mappedChildren[15].type).toBe('p');
+    expect(mappedChildren[15].key).toBe('.3/.3');
+    expect(mappedChildren[16].type).toBe('p');
+    expect(mappedChildren[16].key).toBe('.3/.$z');
+    expect(mappedChildren[17].type).toBe('hr');
+    expect(mappedChildren[17].key).toBe('.3/.5');
+  });
+
   it('should throw on object', () => {
     expect(function() {
       React.Children.forEach({a: 1, b: 2}, function() {}, null);
@@ -954,15 +971,15 @@ describe('ReactChildren', () => {
 
       expect(() =>
         ReactTestUtils.renderIntoDocument(<ComponentReturningArray />),
-      ).toWarnDev(
+      ).toErrorDev(
         'Warning: ' +
-          'Each child in an array or iterator should have a unique "key" prop.' +
-          ' See https://fb.me/react-warning-keys for more information.' +
+          'Each child in a list should have a unique "key" prop.' +
+          ' See https://reactjs.org/link/warning-keys for more information.' +
           '\n    in ComponentReturningArray (at **)',
       );
     });
 
-    it('does not warn when there are keys on  elements in a fragment', () => {
+    it('does not warn when there are keys on elements in a fragment', () => {
       class ComponentReturningArray extends React.Component {
         render() {
           return [<div key="foo" />, <div key="bar" />];
@@ -975,10 +992,11 @@ describe('ReactChildren', () => {
     it('warns for keys for arrays at the top level', () => {
       expect(() =>
         ReactTestUtils.renderIntoDocument([<div />, <div />]),
-      ).toWarnDev(
+      ).toErrorDev(
         'Warning: ' +
-          'Each child in an array or iterator should have a unique "key" prop.' +
-          ' See https://fb.me/react-warning-keys for more information.',
+          'Each child in a list should have a unique "key" prop.' +
+          ' See https://reactjs.org/link/warning-keys for more information.',
+        {withoutStack: true}, // There's nothing on the stack
       );
     });
   });

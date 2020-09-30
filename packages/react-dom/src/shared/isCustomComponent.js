@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -13,7 +13,7 @@ function isCustomComponent(tagName: string, props: Object) {
   }
   switch (tagName) {
     // These are reserved SVG and MathML elements.
-    // We don't mind this whitelist too much because we expect it to never grow.
+    // We don't mind this list too much because we expect it to never grow.
     // The alternative is to track the namespace in a few places which is convoluted.
     // https://w3c.github.io/webcomponents/spec/custom/#custom-elements-core-concepts
     case 'annotation-xml':

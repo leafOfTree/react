@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -59,10 +59,13 @@ describe('ReactMount', () => {
       }
     }
 
-    expect(() => ReactTestUtils.renderIntoDocument(Component)).toWarnDev(
+    expect(() =>
+      ReactTestUtils.renderIntoDocument(Component),
+    ).toErrorDev(
       'Functions are not valid as a React child. ' +
         'This may happen if you return a Component instead of <Component /> from render. ' +
         'Or maybe you meant to call this function rather than return it.',
+      {withoutStack: true},
     );
   });
 
@@ -91,25 +94,25 @@ describe('ReactMount', () => {
       }
     }
 
-    expect(mockMount.mock.calls.length).toBe(0);
-    expect(mockUnmount.mock.calls.length).toBe(0);
+    expect(mockMount).toHaveBeenCalledTimes(0);
+    expect(mockUnmount).toHaveBeenCalledTimes(0);
 
     ReactDOM.render(<Component text="orange" key="A" />, container);
     expect(container.firstChild.innerHTML).toBe('orange');
-    expect(mockMount.mock.calls.length).toBe(1);
-    expect(mockUnmount.mock.calls.length).toBe(0);
+    expect(mockMount).toHaveBeenCalledTimes(1);
+    expect(mockUnmount).toHaveBeenCalledTimes(0);
 
     // If we change the key, the component is unmounted and remounted
     ReactDOM.render(<Component text="green" key="B" />, container);
     expect(container.firstChild.innerHTML).toBe('green');
-    expect(mockMount.mock.calls.length).toBe(2);
-    expect(mockUnmount.mock.calls.length).toBe(1);
+    expect(mockMount).toHaveBeenCalledTimes(2);
+    expect(mockUnmount).toHaveBeenCalledTimes(1);
 
     // But if we don't change the key, the component instance is reused
     ReactDOM.render(<Component text="blue" key="B" />, container);
     expect(container.firstChild.innerHTML).toBe('blue');
-    expect(mockMount.mock.calls.length).toBe(2);
-    expect(mockUnmount.mock.calls.length).toBe(1);
+    expect(mockMount).toHaveBeenCalledTimes(2);
+    expect(mockUnmount).toHaveBeenCalledTimes(1);
   });
 
   it('should reuse markup if rendering to the same target twice', () => {
@@ -124,8 +127,11 @@ describe('ReactMount', () => {
     const container = document.createElement('container');
     container.innerHTML = ReactDOMServer.renderToString(<div />) + ' ';
 
-    expect(() => ReactDOM.hydrate(<div />, container)).toWarnDev(
+    expect(() =>
+      ReactDOM.hydrate(<div />, container),
+    ).toErrorDev(
       'Did not expect server HTML to contain the text node " " in <container>.',
+      {withoutStack: true},
     );
   });
 
@@ -133,7 +139,7 @@ describe('ReactMount', () => {
     const container = document.createElement('container');
     container.innerHTML = ' ' + ReactDOMServer.renderToString(<div />);
 
-    expect(() => ReactDOM.hydrate(<div />, container)).toWarnDev(
+    expect(() => ReactDOM.hydrate(<div />, container)).toErrorDev(
       'Did not expect server HTML to contain the text node " " in <container>.',
     );
   });
@@ -151,8 +157,9 @@ describe('ReactMount', () => {
 
     expect(() =>
       ReactDOM.render(<div />, iFrame.contentDocument.body),
-    ).toWarnDev(
+    ).toErrorDev(
       'Rendering components directly into document.body is discouraged',
+      {withoutStack: true},
     );
   });
 
@@ -168,7 +175,7 @@ describe('ReactMount', () => {
         <div>This markup contains an nbsp entity: &nbsp; client text</div>,
         div,
       ),
-    ).toWarnDev(
+    ).toErrorDev(
       'Server: "This markup contains an nbsp entity:   server text" ' +
         'Client: "This markup contains an nbsp entity:   client text"',
     );
@@ -192,11 +199,14 @@ describe('ReactMount', () => {
     // Test that blasting away children throws a warning
     const rootNode = container.firstChild;
 
-    expect(() => ReactDOM.render(<span />, rootNode)).toWarnDev(
+    expect(() =>
+      ReactDOM.render(<span />, rootNode),
+    ).toErrorDev(
       'Warning: render(...): Replacing React-rendered children with a new ' +
         'root component. If you intended to update the children of this node, ' +
         'you should instead have the existing children update their state and ' +
         'render the new components instead of calling ReactDOM.render.',
+      {withoutStack: true},
     );
   });
 
@@ -219,9 +229,12 @@ describe('ReactMount', () => {
     // Make sure ReactDOM and ReactDOMOther are different copies
     expect(ReactDOM).not.toEqual(ReactDOMOther);
 
-    expect(() => ReactDOMOther.unmountComponentAtNode(container)).toWarnDev(
+    expect(() =>
+      ReactDOMOther.unmountComponentAtNode(container),
+    ).toErrorDev(
       "Warning: unmountComponentAtNode(): The node you're attempting to unmount " +
         'was rendered by another copy of React.',
+      {withoutStack: true},
     );
 
     // Don't throw a warning if the correct React copy unmounts the node
@@ -295,7 +308,7 @@ describe('ReactMount', () => {
       ReactDOM.render(<Foo>a</Foo>, container2);
       // The update did not flush yet.
       expect(container1.textContent).toEqual('1');
-      // The initial mount flushed, but not the update scheduled in cDU.
+      // The initial mount flushed, but not the update scheduled in cDM.
       expect(container2.textContent).toEqual('a');
     });
     // All updates have flushed.

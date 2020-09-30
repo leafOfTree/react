@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14,6 +14,7 @@ const ReactDOMServerIntegrationUtils = require('./utils/ReactDOMServerIntegratio
 let React;
 let ReactDOM;
 let ReactDOMServer;
+let ReactTestUtils;
 
 function initModules() {
   // Reset warning cache.
@@ -21,11 +22,13 @@ function initModules() {
   React = require('react');
   ReactDOM = require('react-dom');
   ReactDOMServer = require('react-dom/server');
+  ReactTestUtils = require('react-dom/test-utils');
 
   // Make them available to the helpers.
   return {
     ReactDOM,
     ReactDOMServer,
+    ReactTestUtils,
   };
 }
 
@@ -95,5 +98,26 @@ describe('ReactDOMServerIntegration', () => {
       );
       expect(component.refs.myDiv).toBe(root.firstChild);
     });
+  });
+
+  it('should forward refs', async () => {
+    const divRef = React.createRef();
+
+    class InnerComponent extends React.Component {
+      render() {
+        return <div ref={this.props.forwardedRef}>{this.props.value}</div>;
+      }
+    }
+
+    const OuterComponent = React.forwardRef((props, ref) => (
+      <InnerComponent {...props} forwardedRef={ref} />
+    ));
+
+    await clientRenderOnServerString(
+      <OuterComponent ref={divRef} value="hello" />,
+    );
+
+    expect(divRef.current).not.toBe(null);
+    expect(divRef.current.textContent).toBe('hello');
   });
 });
